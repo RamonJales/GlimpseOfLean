@@ -2,6 +2,9 @@ import GlimpseOfLean.Library.Basic
 
 namespace Introduction
 
+def dist (x y : ℝ) := |x - y|
+def Seq (a : Type) := ℕ → a
+
 /-
 # Introduction to this tutorial
 
@@ -25,8 +28,9 @@ First let us review two calculus definitions.
 
 /-- A sequence `u` of real numbers converges to `l` if `∀ ε > 0, ∃ N, ∀ n ≥ N, |u_n - l| ≤ ε`.
 This condition will be spelled `seq_limit u l`. -/
+--Note: u is a "funcion", so its receive a natural and returns your respective number
 def seq_limit (u : ℕ → ℝ) (l : ℝ) :=
-∀ ε > 0, ∃ N, ∀ n ≥ N, |u n - l| ≤ ε
+∀ ε > 0, ∃ N, ∀ n ≥ N, dist (u n) l ≤ ε
 
 /- In the above definition, note that the `n`-th term of the sequence `u` is denoted
 simply by `u n`.
@@ -62,6 +66,8 @@ example (f : ℝ → ℝ) (u : ℕ → ℝ) (x₀ : ℝ) (hu : seq_limit u x₀)
   intros ε hε
   -- By assumption on `f` applied to this positive `ε`, we get a positive `δ`
   -- such that, for all real numbers `x`, if `|x - x₀| ≤ δ` then `|f(x) - f(x₀)| ≤ ε` (1).
+  -- a estrutura do obtain é: Temos uma definição que possui existencial. O que vem depois do := é prova daquele negocio que estamos dizendo que tem existencial
+  -- o que vemos ganhar de proposição. E o que vem logo depois do obtain são as variaveis que iremos ganhar.
   obtain ⟨δ, δ_pos, Hf⟩ : ∃ δ > 0, ∀ x, |x - x₀| ≤ δ → |f x - f x₀| ≤ ε := hf ε hε
   -- The assumption on `u` applied to this `δ` gives a natural number `N` such that
   -- for every natural number `n`, if `n ≥ N` then `|u_n - x₀| ≤ δ`   (2).

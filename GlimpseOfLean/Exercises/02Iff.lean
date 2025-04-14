@@ -21,7 +21,7 @@ The above proof is a direct proof: we already know `0 < a` and we feed this fact
 implication.
 We can also use backward reasoning using the `apply` tactic.
 -/
-
+-- apply sendo usado como backward reasoning
 example (a : ℝ) (ha : 0 < a) : 0 < (a^2)^2 := by {
   apply sq_pos_of_pos -- Thanks to `sq_pos_of_pos`, it suffices to prove `0 < a^2`
   apply sq_pos_of_pos -- Thanks to `sq_pos_of_pos`, it suffices to prove `0 < a`
@@ -35,7 +35,11 @@ prove one-by-one.
 -/
 
 example (a b : ℝ) (ha : 0 < a) (hb : 0 < b) : 0 < a^2 + b^2 := by {
-  sorry
+  apply add_pos
+  apply sq_pos_of_pos
+  exact ha
+  apply sq_pos_of_pos
+  exact hb
 }
 
 /-
@@ -60,7 +64,13 @@ example (a : ℝ) (ha : 0 < a) : 0 < (a^2)^2 := by {
 /- Now prove the same lemma as before using forwards reasoning. -/
 
 example (a b : ℝ) (ha : 0 < a) (hb : 0 < b) : 0 < a^2 + b^2 := by {
-  sorry
+  have h2 : 0 < a^2 := by
+    apply sq_pos_of_pos
+    exact ha
+  have h3 : 0 < b^2 := by
+    apply sq_pos_of_pos
+    exact hb
+  exact add_pos h2 h3
 }
 
 
@@ -79,7 +89,18 @@ example (a : ℝ) : a > 0 → b > 0 → a + b > 0 := by {
 /- Now prove the following simple statement in propositional logic.
 Note that `p → q → r` means `p → (q → r)`. -/
 example (p q r : Prop) : (p → q) → (p → q → r) → p → r := by {
-  sorry
+  intro ha hb hc
+  have h1 : q := ha hc
+  have h2 : (q → r) := hb hc
+  have h3 : r := h2 h1
+  exact h3
+  /-
+  ou você pode fazer backward reasoning, perceba que é bem mais simples:
+  apply hb
+  exact hc
+  apply ha
+  exact hc
+  -/
 }
 
 /- # Equivalences
@@ -110,7 +131,11 @@ Let's prove a variation
 -/
 
 example {a b : ℝ} (c : ℝ) : a + c ≤ b + c ↔ a ≤ b := by {
-  sorry
+  rw [← sub_nonneg]
+  have key : (b + c) - (a + c) = b - a := by
+    ring
+  rw [key]
+  rw [sub_nonneg]
 }
 
 /-
@@ -148,7 +173,9 @@ example {a b : ℝ}  (ha : 0 ≤ a) : b ≤ a + b := by {
 /- Let's do a variant using `add_le_add_iff_left a : a + b ≤ a + c ↔ b ≤ c` instead. -/
 
 example (a b : ℝ) (hb : 0 ≤ b) : a ≤ a + b := by {
-  sorry
+  calc
+    a = a + 0 := by ring
+    _ ≤ a + b := by {rw [add_le_add_iff_left a]; exact hb}
 }
 
 /-
@@ -179,7 +206,16 @@ example (a b : ℝ) : (a-b)*(a+b) = 0 ↔ a^2 = b^2 := by {
 /- You can try it yourself in this exercise. -/
 
 example (a b : ℝ) : a = b ↔ b - a = 0 := by {
-  sorry
+  constructor
+  . intro h
+    calc
+      b - a = b - b := by rw[h]
+          _ = 0     := by ring
+  . intro h
+    calc
+      a = a + 0       := by ring
+      _ = a + (b - a) := by rw[← h]
+      _ = b           := by ring
 }
 
 /-

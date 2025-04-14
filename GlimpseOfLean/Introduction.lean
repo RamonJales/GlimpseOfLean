@@ -81,7 +81,12 @@ example (f : ℝ → ℝ) (u : ℕ → ℝ) (x₀ : ℝ) (hu : seq_limit u x₀)
   -- This follows from property (2) and our assumption on `n`.
   apply Hu n hn
   -- This finishes the proof!
-  }
+}
+
+example : ∃ n : ℕ, n > 5 := by {
+  use 6
+  exact Nat.suc(5)
+}
 
 /-
 Now that this proof is over, you can choose between the short track or the longer one.

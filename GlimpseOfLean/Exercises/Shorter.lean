@@ -46,7 +46,7 @@ finish the exercise.
 -/
 
 example (a b : ℝ) : (a+b)*(a-b) = a^2 - b^2 := by {
-  sorry
+  ring
 }
 
 /-
@@ -67,7 +67,8 @@ Try it on the next example.
 -/
 
 example (a b : ℝ) (f : ℝ → ℝ) : f ((a+b)^2 - 2*a*b) = f (a^2 + b^2) := by {
-  sorry
+  congr
+  ring
 }
 
 /-
@@ -138,7 +139,20 @@ This is different from regular selection of text in your editor or browser.
 -/
 
 example (a b c : ℝ) (h : a = -b) (h' : b + c = 0) : b*(a - c) = 0 := by {
-  sorry
+  -- rw [h]
+  -- have hc : c = -b := by linarith
+  -- rw [hc]
+  -- ring
+  have hc : c = -b := by linarith
+
+  calc
+    b * (a - c) = b * (-b - c) := by rw [h]
+    _ = b * (-b) + b * (-c)   := by ring
+    _ = -b^2 + b * (-c)       := by ring
+    _ = -b^2 - b * c          := by ring
+    _ = -b^2 - b * (-b)       := by rw [hc]
+    _ = -b^2 + b^2            := by ring
+    _ = 0                     := by ring
 }
 
 /-
@@ -153,7 +167,9 @@ example (a b : ℝ) (h : a ≤ 2*b) : a + b ≤ 3*b := by {
 }
 
 example (a b : ℝ) (h : b ≤ a) : a + b ≤ 2*a := by {
-  sorry
+  calc
+    a + b ≤ a + a := by gcongr
+    _     = 2*a   := by ring
 }
 
 /-
@@ -217,7 +233,7 @@ In the following exercise, you get to choose whether you want help from Lean
 or do all the work.
 -/
 example (f : ℝ → ℝ) (hf : even_fun f) : f (-5) = f 5 := by {
-  sorry
+  apply hf
 }
 
 /-
@@ -314,7 +330,12 @@ need to be the same notation as in the statement.
 -/
 
 example (f g : ℝ → ℝ) (hf : even_fun f) : even_fun (g ∘ f) := by {
-  sorry
+  intro x
+  calc
+    (g ∘ f) (-x) = g (f (-x)) := by rfl
+    _            = g (f x)    := by rw [hf]
+    _            = (g ∘ f) x  := by rfl
+
 }
 
 /-
@@ -385,7 +406,10 @@ into pieces. You can choose your way in the following variation.
 
 example (f g : ℝ → ℝ) (hf : non_decreasing f) (hg : non_increasing g) :
     non_increasing (g ∘ f) := by {
-  sorry
+  intro x₁ x₂ h
+  apply hg
+  apply hf
+  exact h
 }
 
 /-
@@ -419,7 +443,11 @@ Use `simp` to prove the following. Note that `X : Set ℝ` means that `X` is a
 set containing (only) real numbers. -/
 
 example (x : ℝ) (X Y : Set ℝ) (hx : x ∈ X) : x ∈ (X ∩ Y) ∪ (X \ Y) := by {
-  sorry
+  by_cases h : x ∈ Y
+  left
+  exact ⟨hx, h⟩
+  right
+  exact ⟨hx, h⟩
 }
 
 /-
@@ -472,7 +500,14 @@ example (a b c : ℤ) (h₁ : a ∣ b) (h₂ : b ∣ c) : a ∣ c := by {
 }
 
 example (a b c : ℤ) (h₁ : a ∣ b) (h₂ : a ∣ c) : a ∣ b + c := by {
-  sorry
+  rcases h₁ with ⟨k₁, hk₁⟩
+  rcases h₂ with ⟨k₂, hk₂⟩
+  use k₁ + k₂
+  calc
+    b + c = a * k₁ + c := by rw [hk₁]
+    _ = a * k₁ + a * k₂ := by rw [hk₂]
+    _ = a * (k₁ + k₂) := by ring
+
 }
 
 /-
@@ -659,5 +694,3 @@ def CauchySequence (u : ℕ → ℝ) :=
 example : (∃ l, seq_limit u l) → CauchySequence u := by {
   sorry
 }
-
-

@@ -458,7 +458,7 @@ Use `apply?` to find the lemma that every continuous function with compact suppo
 has a global minimum. -/
 
 example (f : ℝ → ℝ) (hf : Continuous f) (h2f : HasCompactSupport f) : ∃ x, ∀ y, f x ≤ f y := by {
-  sorry
+  exact Continuous.exists_forall_le_of_hasCompactSupport hf h2f
 }
 
 /- ## Existential quantifiers
@@ -602,7 +602,22 @@ You will probably want to rewrite using `abs_le` in several assumptions as well 
 goal. You can use `rw [abs_le] at *` for this. -/
 example (hu : seq_limit u l) (hw : seq_limit w l) (h : ∀ n, u n ≤ v n) (h' : ∀ n, v n ≤ w n) :
     seq_limit v l := by {
-  sorry
+      intro ε ε_pos
+      rcases hu ε ε_pos with ⟨N₁, hN₁⟩
+      rcases hw ε ε_pos with ⟨N₂, hN₂⟩
+      use max N₁ N₂
+      intro n hn
+      rw [ge_max_iff] at hn
+      specialize hN₁ n hn.1
+      specialize hN₂ n hn.2
+      rw [abs_le] at *
+      constructor
+      { calc
+          -ε ≤ u n - l := hN₁.1
+          _ ≤ v n - l  := by linarith [h n] }
+      { calc
+          v n - l ≤ w n - l := by linarith [h' n]
+          _ ≤ ε             := hN₂.2 }
 }
 
 
@@ -617,7 +632,22 @@ as the first step.
 -- exercises.
 lemma uniq_limit (hl : seq_limit u l) (hl' : seq_limit u l') : l = l' := by {
   apply eq_of_abs_sub_le_all
-  sorry
+  intro ε ε_pos
+  have hε_half : ε / 2 > 0 := by linarith
+  rcases hl (ε / 2) hε_half with ⟨N₁, hN₁⟩
+  rcases hl' (ε / 2) hε_half with ⟨N₂, hN₂⟩
+  set N := max N₁ N₂
+  have hN : N ≥ N₁ ∧ N ≥ N₂ := by {
+    rw [← ge_max_iff]
+  }
+  specialize hN₁ N hN.1
+  specialize hN₂ N hN.2
+  calc
+    |l - l'| = |l - u N + (u N - l')|     := by ring_nf
+    _ ≤ |l - u N| + |u N - l'|            := by apply abs_add (l - u N) (u N - l')
+    _ = |u N - l| + |u N - l'|            := by rw [abs_sub_comm]
+    _ ≤ ε / 2 + ε / 2                     := by gcongr
+    _ = ε                                 := by linarith
 }
 
 /-
@@ -660,7 +690,13 @@ Don’t forget to move the cursor around to see what each `apply?` is proving.
 /-- Extractions take arbitrarily large values for arbitrarily large
 inputs. -/
 lemma extraction_ge : extraction φ → ∀ N N', ∃ n ≥ N', φ n ≥ N := by {
-  sorry
+  intro hφ N N'
+  use max N N'
+  constructor
+  · exact le_max_right N N'
+  · have h1 : N ≤ max N N' := le_max_left N N'
+    have h2 : max N N' ≤ φ (max N N') := id_le_extraction' hφ (max N N')
+    exact le_trans h1 h2
 }
 
 /-- A real number `a` is a cluster point of a sequence `u`
@@ -671,20 +707,32 @@ def cluster_point (u : ℕ → ℝ) (a : ℝ) := ∃ φ, extraction φ ∧ seq_l
 `u` arbitrarily close to `a` for arbitrarily large input. -/
 lemma near_cluster :
   cluster_point u a → ∀ ε > 0, ∀ N, ∃ n ≥ N, |u n - a| ≤ ε := by {
-  sorry
+    intro h_cluster ε ε_pos N
+    rcases h_cluster with ⟨φ, hφ_extraction, hφ_limit⟩
+    rcases hφ_limit ε ε_pos with ⟨M, hM⟩
+    use φ (max M N)
+    constructor
+    · exact le_trans (le_max_right M N) (id_le_extraction' hφ_extraction (max M N))
+    · exact hM (max M N) (le_max_left M N)
 }
 
 
 /-- If `u` tends to `l` then its subsequences tend to `l`. -/
 lemma subseq_tendsto_of_tendsto' (h : seq_limit u l) (hφ : extraction φ) :
   seq_limit (u ∘ φ) l := by {
-  sorry
+  intro ε ε_pos
+  rcases h ε ε_pos with ⟨N, hN⟩
+  use N
+  intro m hm
+  have hφm : φ m ≥ N := le_trans hm (id_le_extraction' hφ m)
+  exact hN (φ m) hφm
 }
 
 /-- If `u` tends to `l` all its cluster points are equal to `l`. -/
 lemma cluster_limit (hl : seq_limit u l) (ha : cluster_point u a) : a = l := by {
-  sorry
-}
+  rcases ha with ⟨φ, hφ_extraction, hφ_limit⟩
+  have hφ_l : seq_limit (u ∘ φ) l := subseq_tendsto_of_tendsto' hl hφ_extraction
+  exact uniq_limit hφ_limit hφ_l}
 
 /-- `u` is a Cauchy sequence if its values get arbitrarily close for large
 enough inputs. -/
@@ -692,5 +740,17 @@ def CauchySequence (u : ℕ → ℝ) :=
   ∀ ε > 0, ∃ N, ∀ p q, p ≥ N → q ≥ N → |u p - u q| ≤ ε
 
 example : (∃ l, seq_limit u l) → CauchySequence u := by {
-  sorry
+  intro h_ex
+  rcases h_ex with ⟨l, h_limit⟩
+  intro ε ε_pos
+  have hε_half : ε / 2 > 0 := by linarith
+  rcases h_limit (ε / 2) hε_half with ⟨N, hN⟩
+  use N
+  intro p q hp hq
+  calc
+    |u p - u q| = |(u p - l) + (l - u q)| := by ring_nf
+    _ ≤ |u p - l| + |l - u q|            := by apply abs_add (u p - l) (l - u q)
+    _ = |u p - l| + |u q - l|            := by rw [← abs_sub_comm l (u q)]
+    _ ≤ ε / 2 + ε / 2                    := by gcongr <;> apply hN <;> assumption
+    _ = ε                                := by linarith
 }
